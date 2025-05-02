@@ -76,9 +76,3 @@ The server-side of Matrimony Connect is built with Node.js, Express, and MongoDB
 - **Contact Requests**: `POST /api/contact-requests`, `GET /api/contact-requests/:email`, `PUT /api/contact-requests/:id`
 - **Favorites**: `POST /api/favorites`, `GET /api/favorites/:email`, `DELETE /api/favorites/:id`
 - **Admin**: `GET /api/admin/users/count`, `GET /api/admin/biodatas/stats`, `PUT /api/admin/premium/:id`
-
-## Contributing
-Contributions are welcome! Please fork the repository, create a feature branch, and submit a pull request with your changes.
-
-## License
-This project is licensed under the MIT License.
