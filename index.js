@@ -1,19 +1,49 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Label: CORS Configuration
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://pathway-himadree.web.app/",
+  ],
+  credentials: true,
+  optionalSuccessStatus: 200,
+};
+
 // Label: Middlewares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
+
+// *JWT Token Verification Middleware
+const verifyJWTToken = (req, res, next) => {
+  const token = req.cookies?.pathwayAccess;
+  if (!token) {
+    return res.status(401).send({ massage: "Unauthorize Access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+    if (error) {
+      console.log(error);
+      return res.status(400).send({ massage: "Bad Request" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
 
 // Label: MongoDB URI Connection
 const uri = `mongodb+srv://${process.env.DB_USER_NAME}:${process.env.DB_USER_PASSWORD}@cluster0.lhej2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Label: Create a MongoClient with a MongoClientOptions object to set the Stable API version
+// Label: MongoDB Client Setup
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -35,6 +65,32 @@ async function run() {
     const bioDataCollection = database.collection("biodata");
     const userCollection = database.collection("users");
     const successStoryCollection = database.collection("stories");
+
+    // *Generate JWT Token
+    app.post("/jwt", async (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "5d",
+      });
+      res
+        .cookie("pathwayAccess", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
+    // *Clear Cookie On Logout
+    app.get("/logout", async (req, res) => {
+      res
+        .clearCookie("pathwayAccess", {
+          maxAge: 0,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
 
     // Label: Get All Users
     // Label: Get A Users
