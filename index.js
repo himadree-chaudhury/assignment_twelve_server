@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -104,6 +104,13 @@ async function run() {
     });
 
     // Label: Get A Biodata
+    app.get("/biodata/:id",verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+      const result = await bioDataCollection
+        .findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
     // Label: Add A Biodata
     // Label: Modify A Biodata
 
