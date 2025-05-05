@@ -100,15 +100,24 @@ async function run() {
     // Label: Get All Biodata
     app.get("/biodata", async (req, res) => {
       const result = await bioDataCollection.find().toArray();
+      console.log(result);
       res.send(result);
     });
 
     // Label: Get A Biodata
-    app.get("/biodata/:id",verifyJWTToken, async (req, res) => {
+    app.get("/biodata/:id", verifyJWTToken, async (req, res) => {
       const id = req.params.id;
-      const result = await bioDataCollection
-        .findOne({ _id: new ObjectId(id) });
-      res.send(result);
+      const result = await bioDataCollection.findOne({ _id: new ObjectId(id) });
+      // *Find Similar Biodatas
+      const similarResult = await bioDataCollection
+        .find({
+          biodataType: result.biodataType,
+          _id: { $ne: new ObjectId(id) },
+        })
+        .limit(3)
+        .toArray();
+      console.log(similarResult);
+      res.send({ biodata: result, similarBiodata: similarResult });
     });
 
     // Label: Add A Biodata
