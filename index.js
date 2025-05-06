@@ -112,8 +112,25 @@ async function run() {
 
     // Label: Get All Biodata
     app.get("/biodata", async (req, res) => {
-      const result = await bioDataCollection.find().toArray();
-      res.send(result);
+      const page = req.query.page;
+      const limit = req.query.limit;
+
+      // *Pagination Calculation
+      const pageNumber = parseInt(page);
+      const limitNumber = parseInt(limit);
+      const skip = (pageNumber - 1) * limitNumber;
+      const totalCount = await bioDataCollection.countDocuments();
+
+      const biodata = await bioDataCollection
+        .find()
+        .skip(skip)
+        .limit(limitNumber)
+        .toArray();
+      res.send({
+        biodata,
+        totalPageNumber: Math.ceil(totalCount / limitNumber),
+        currentPageNumber: pageNumber,
+      });
     });
 
     // Label: Get Six Premium Biodata
