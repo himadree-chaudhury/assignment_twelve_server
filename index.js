@@ -92,6 +92,19 @@ async function run() {
         .send({ success: true });
     });
 
+    // Label: Get Milestone Stat
+    app.get("/milestone", async (req, res) => {
+      const totalBiodata = await bioDataCollection.countDocuments();
+      const totalGirls = await bioDataCollection.countDocuments({
+        biodataType: "Female",
+      });
+      const totalBoys = await bioDataCollection.countDocuments({
+        biodataType: "Male",
+      });
+      const totalMarriage = await successStoryCollection.countDocuments();
+      res.send({ totalBiodata, totalGirls, totalBoys, totalMarriage });
+    });
+
     // Label: Get All Users
     // Label: Get A Users
     // Label: Add A User
@@ -125,7 +138,6 @@ async function run() {
         .sort(sortOption)
         .limit(6)
         .toArray();
-      console.log(result);
       res.send(result);
     });
 
