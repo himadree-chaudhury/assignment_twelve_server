@@ -160,6 +160,28 @@ async function run() {
     // Label: Modify A Biodata
 
     // Label: Get All Success Story
+    app.get("/success-stories", async (req, res) => {
+      const sort = req.query.sort;
+
+      // *Sorting Options
+      let sortOption = {};
+      switch (sort) {
+        case "newest":
+          sortOption = { marriageDate: -1 };
+          break;
+        case "oldest":
+          sortOption = { marriageDate: 1 };
+          break;
+        default:
+          sortOption = { marriageDate: -1 };
+      }
+
+      const result = await successStoryCollection
+        .find()
+        .sort(sortOption)
+        .toArray();
+      res.send(result);
+    });
     // Label: Get A Success Story
     // Label: Add A Success Story
     // Label: Modify A Success Story
