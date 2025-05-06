@@ -100,6 +100,31 @@ async function run() {
     // Label: Get All Biodata
     app.get("/biodata", async (req, res) => {
       const result = await bioDataCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Label: Get Six Premium Biodata
+    app.get("/premium", async (req, res) => {
+      const sort = req.query.sort;
+
+      // *Sorting Options
+      let sortOption = {};
+      switch (sort) {
+        case "younger":
+          sortOption = { age: 1 };
+          break;
+        case "older":
+          sortOption = { age: -1 };
+          break;
+        default:
+          sortOption = { age: 1 };
+      }
+
+      const result = await bioDataCollection
+        .find({ isPremium: true })
+        .sort(sortOption)
+        .limit(6)
+        .toArray();
       console.log(result);
       res.send(result);
     });
@@ -116,7 +141,6 @@ async function run() {
         })
         .limit(3)
         .toArray();
-      console.log(similarResult);
       res.send({ biodata: result, similarBiodata: similarResult });
     });
 
