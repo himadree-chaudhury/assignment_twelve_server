@@ -114,20 +114,82 @@ async function run() {
     app.get("/biodata", async (req, res) => {
       const page = req.query.page;
       const limit = req.query.limit;
+      const type = req.query.type;
+      const division = req.query.division;
+      const minAge = parseInt(req.query.minAge);
+      const maxAge = parseInt(req.query.maxAge);
+
+      // console.log(age);
 
       // *Pagination Calculation
       const pageNumber = parseInt(page);
       const limitNumber = parseInt(limit);
       const skip = (pageNumber - 1) * limitNumber;
-      const totalCount = await bioDataCollection.countDocuments();
+
+      // *Sorting Options
+      let queryOption = {};
+
+      // *Division Sorting
+      switch (division) {
+        case "dha":
+          queryOption.presentDivision = "Dhaka";
+          break;
+        case "cha":
+          queryOption.presentDivision = "Chattagram";
+          break;
+        case "ran":
+          queryOption.presentDivision = "Rangpur";
+          break;
+        case "bar":
+          queryOption.presentDivision = "Barisal";
+          break;
+        case "khu":
+          queryOption.presentDivision = "Khulna";
+          break;
+        case "mym":
+          queryOption.presentDivision = "Mymensingh";
+          break;
+        case "syl":
+          queryOption.presentDivision = "Sylhet";
+          break;
+        default:
+      }
+
+      // *Type Sorting
+      switch (type) {
+        case "male":
+          queryOption.biodataType = "Male";
+          break;
+        case "female":
+          queryOption.biodataType = "Female";
+          break;
+        default:
+      }
+
+      // *Age Range Filter
+      if (!isNaN(minAge) && !isNaN(maxAge)) {
+        queryOption.age = { $gte: minAge, $lte: maxAge };
+      } else if (!isNaN(minAge)) {
+        queryOption.age = { $gte: minAge };
+      } else if (!isNaN(maxAge)) {
+        queryOption.age = { $lte: maxAge };
+      }
+
+
+      console.log(minAge,maxAge);
+
+      const totalCount = await bioDataCollection.countDocuments(queryOption);
 
       const biodata = await bioDataCollection
-        .find()
+        .find(queryOption)
         .skip(skip)
         .limit(limitNumber)
         .toArray();
       res.send({
         biodata,
+        totalCount,
+        minAge,
+        maxAge,
         totalPageNumber: Math.ceil(totalCount / limitNumber),
         currentPageNumber: pageNumber,
       });
