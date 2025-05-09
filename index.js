@@ -234,13 +234,23 @@ async function run() {
 
     // Label: Add A Biodata
     app.post("/add-biodata", verifyJWTToken, async (req, res) => {
-      const biodataId = await bioDataCollection.countDocuments() + 1;
+      const biodataId = (await bioDataCollection.countDocuments()) + 1;
       const isPremium = false;
       const biodata = { ...req.body, biodataId, isPremium };
-      console.log(biodata);
-      // const result = await bioDataCollection.insertOne(biodata);
-      // res.send(result);
+      const result = await bioDataCollection.insertOne(biodata);
+      res.send(result);
     });
+
+    // Label: View Own Biodata
+    app.get("/self-biodata", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const result = await bioDataCollection.findOne({ contactEmail: email });
+      if (!result) {
+        return res.status(404).send({ message: "Biodata not found" });
+      }
+      res.send(result);
+    });
+
     // Label: Modify A Biodata
 
     // Label: Get All Success Story
