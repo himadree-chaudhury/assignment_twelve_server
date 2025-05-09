@@ -175,9 +175,6 @@ async function run() {
         queryOption.age = { $lte: maxAge };
       }
 
-
-      console.log(minAge,maxAge);
-
       const totalCount = await bioDataCollection.countDocuments(queryOption);
 
       const biodata = await bioDataCollection
@@ -236,6 +233,14 @@ async function run() {
     });
 
     // Label: Add A Biodata
+    app.post("/add-biodata", verifyJWTToken, async (req, res) => {
+      const biodataId = await bioDataCollection.countDocuments() + 1;
+      const isPremium = false;
+      const biodata = { ...req.body, biodataId, isPremium };
+      console.log(biodata);
+      // const result = await bioDataCollection.insertOne(biodata);
+      // res.send(result);
+    });
     // Label: Modify A Biodata
 
     // Label: Get All Success Story
