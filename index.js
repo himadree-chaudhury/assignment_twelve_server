@@ -106,8 +106,27 @@ async function run() {
     });
 
     // Label: Get All Users
+
     // Label: Get A Users
+
     // Label: Add A User
+    app.post("/user/:email", async (req, res) => {
+      const email = req.query.email;
+      const isExist = await userCollection.findOne({ email: email });
+
+      if (isExist) {
+        return res.send(isExist);
+      }
+      const result = await userCollection.insertOne({
+        ...req.body,
+        role: "Non-Premium User",
+        requestedContactIDs: [],
+        favouriteIDs: [],
+        timestamp: Date.now(),
+      });
+      res.send(result);
+    });
+
     // Label: Modify A User
 
     // Label: Get All Biodata
@@ -118,8 +137,6 @@ async function run() {
       const division = req.query.division;
       const minAge = parseInt(req.query.minAge);
       const maxAge = parseInt(req.query.maxAge);
-
-      // console.log(age);
 
       // *Pagination Calculation
       const pageNumber = parseInt(page);
@@ -235,8 +252,7 @@ async function run() {
     // Label: Add A Biodata
     app.post("/add-biodata", verifyJWTToken, async (req, res) => {
       const biodataId = (await bioDataCollection.countDocuments()) + 1;
-      const isPremium = false;
-      const biodata = { ...req.body, biodataId, isPremium };
+      const biodata = { ...req.body, biodataId, isPremium: false };
       const result = await bioDataCollection.insertOne(biodata);
       res.send(result);
     });
@@ -245,13 +261,31 @@ async function run() {
     app.get("/self-biodata", verifyJWTToken, async (req, res) => {
       const email = req.user.email;
       const result = await bioDataCollection.findOne({ contactEmail: email });
-      if (!result) {
-        return res.status(404).send({ message: "Biodata not found" });
-      }
+      // if (!result) {
+      //   return res.status(404).send({ message: "Biodata not found" });
+      // }
       res.send(result);
     });
 
-    // Label: Modify A Biodata
+    // Label: Make Biodata Premium Request
+
+    // Label: Update Biodata To Premium
+    // app.patch(
+    //   "/biodata/:email/make-premium",
+    //   verifyJWTToken,
+    //   async (req, res) => {
+    //     const email = req.params.email;
+    //     const { isPremium } = req.body;
+    //     const result = await bioDataCollection.updateOne(
+    //       { contactEmail: email },
+    //       { $set: { isPremium } }
+    //     );
+    //     if (result.matchedCount === 0) {
+    //       return res.status(404).send({ message: "Biodata not found" });
+    //     }
+    //     res.send({ success: true });
+    //   }
+    // );
 
     // Label: Get All Success Story
     app.get("/success-stories", async (req, res) => {
@@ -276,6 +310,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
     // Label: Get A Success Story
     // Label: Add A Success Story
     // Label: Modify A Success Story
