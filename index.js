@@ -111,8 +111,8 @@ async function run() {
 
     // Label: Add A User
     app.post("/user/:email", async (req, res) => {
-      const email = req.query.email;
-      const isExist = await userCollection.findOne({ email: email });
+      const email = req.params.email;
+      const isExist = await userCollection.findOne({ email });
 
       if (isExist) {
         return res.send(isExist);
@@ -286,6 +286,20 @@ async function run() {
     //     res.send({ success: true });
     //   }
     // );
+
+    // Label: Add Favourite Biodata to User Favourite List
+    app.post("/add-favourite/:id", verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+      const email = req.user.email;
+      console.log(id, email);
+      const result = await userCollection.updateOne(
+        { email },
+        {
+          $addToSet: { favouriteIDs: id },
+        }
+      );
+      res.send(result);
+    });
 
     // Label: Get All Success Story
     app.get("/success-stories", async (req, res) => {
