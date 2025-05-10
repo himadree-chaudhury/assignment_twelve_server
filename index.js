@@ -13,7 +13,7 @@ const corsOptions = {
   origin: [
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://pathway-himadree.web.app/",
+    "https://pathway-himadree.web.app",
   ],
   credentials: true,
   optionalSuccessStatus: 200,
@@ -106,8 +106,6 @@ async function run() {
       res.send({ totalBiodata, totalGirls, totalBoys, totalMarriage });
     });
 
-    // Label: Get All Users
-
     // Label: Add A User
     app.post("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -139,6 +137,12 @@ async function run() {
         .toArray();
       const requestedContactIDs = requests.map((req) => req.biodataId);
       res.send({ ...result, requestedContactIDs });
+    });
+
+    // Label: Get All Users
+    app.get("/all-users", verifyJWTToken, async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
     });
 
     // Label: Modify A User
