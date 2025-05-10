@@ -107,8 +107,6 @@ async function run() {
 
     // Label: Get All Users
 
-    // Label: Get A Users
-
     // Label: Add A User
     app.post("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -124,6 +122,13 @@ async function run() {
         favouriteIDs: [],
         timestamp: Date.now(),
       });
+      res.send(result);
+    });
+
+    // Label: Get A User
+    app.get("/user-info/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await userCollection.findOne({ email });
       res.send(result);
     });
 
@@ -298,6 +303,30 @@ async function run() {
         }
       );
       res.send(result);
+    });
+
+    // Label: Get All Favourite Biodata
+    app.get("/favourites", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const user = await userCollection.findOne({ email });
+      const favouriteIDsAsNumbers = user.favouriteIDs.map((id) => parseInt(id));
+      const favouriteBiodata = await bioDataCollection
+        .find(
+          {
+            biodataId: { $in: favouriteIDsAsNumbers },
+          },
+          {
+            projection: {
+              name: 1,
+              permanentDivision: 1,
+              biodataId: 1,
+              occupation: 1,
+              _id: 0,
+            },
+          }
+        )
+        .toArray();
+      res.send(favouriteBiodata);
     });
 
     // Label: Add Premium Contact Request to User's Requested Contact List
