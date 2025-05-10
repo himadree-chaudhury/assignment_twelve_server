@@ -64,6 +64,7 @@ async function run() {
     const database = client.db(process.env.DB_NAME);
     const bioDataCollection = database.collection("biodata");
     const userCollection = database.collection("users");
+    const contactRequestCollection = database.collection("contactRequest");
     const successStoryCollection = database.collection("stories");
 
     // *Generate JWT Token
@@ -118,7 +119,6 @@ async function run() {
       const result = await userCollection.insertOne({
         ...req.body,
         role: "Non-Premium User",
-        requestedContactIDs: [],
         favouriteIDs: [],
         timestamp: Date.now(),
       });
@@ -129,7 +129,16 @@ async function run() {
     app.get("/user-info/:email", async (req, res) => {
       const email = req.params.email;
       const result = await userCollection.findOne({ email });
-      res.send(result);
+      const requests = await contactRequestCollection
+        .find(
+          { email },
+          {
+            projection: { biodataId: 1, _id: 0 },
+          }
+        )
+        .toArray();
+      const requestedContactIDs = requests.map((req) => req.biodataId);
+      res.send({ ...result, requestedContactIDs });
     });
 
     // Label: Modify A User
@@ -333,12 +342,26 @@ async function run() {
     app.post("/contact-request/:id", verifyJWTToken, async (req, res) => {
       const id = req.params.id;
       const email = req.user.email;
-      const result = await userCollection.updateOne(
-        { email },
-        {
-          $addToSet: { requestedContactIDs: id },
-        }
-      );
+      const isExist = await contactRequestCollection.findOne({
+        email,
+        biodataId: id.toString(),
+      });
+      if (isExist) {
+        return res.send(isExist);
+      }
+      const user = await userCollection.findOne({ email });
+      const result = await contactRequestCollection.insertOne({
+        email: email,
+        name: user.displayName,
+        biodataId: id,
+        status: "pending",
+      });
+      res.send(result);
+    });
+
+    // Label: Get All Premium Contact Requests
+    app.get("/contact-request-list", verifyJWTToken, async (req, res) => {
+      const result = await contactRequestCollection.find().toArray();
       res.send(result);
     });
 
