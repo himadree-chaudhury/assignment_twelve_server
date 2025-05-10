@@ -287,15 +287,27 @@ async function run() {
     //   }
     // );
 
-    // Label: Add Favourite Biodata to User Favourite List
+    // Label: Add Favourite Biodata to User's Favourite List
     app.post("/add-favourite/:id", verifyJWTToken, async (req, res) => {
       const id = req.params.id;
       const email = req.user.email;
-      console.log(id, email);
       const result = await userCollection.updateOne(
         { email },
         {
           $addToSet: { favouriteIDs: id },
+        }
+      );
+      res.send(result);
+    });
+
+    // Label: Add Premium Contact Request to User's Requested Contact List
+    app.post("/contact-request/:id", verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+      const email = req.user.email;
+      const result = await userCollection.updateOne(
+        { email },
+        {
+          $addToSet: { requestedContactIDs: id },
         }
       );
       res.send(result);
