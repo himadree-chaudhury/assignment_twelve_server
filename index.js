@@ -116,7 +116,8 @@ async function run() {
       }
       const result = await userCollection.insertOne({
         ...req.body,
-        role: "Non-Premium User",
+        role: "User",
+        isAdmin: false,
         favouriteIDs: [],
         timestamp: Date.now(),
       });
@@ -394,7 +395,14 @@ async function run() {
     });
 
     // Label: Get A Success Story
+
     // Label: Add A Success Story
+    app.post("/got-married", verifyJWTToken, async (req, res) => {
+      const story = req.body;
+      const result = await successStoryCollection.insertOne(story);
+      res.send(result);
+    });
+
     // Label: Modify A Success Story
   } finally {
     // await client.close();
