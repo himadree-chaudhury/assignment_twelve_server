@@ -398,7 +398,8 @@ async function run() {
 
     // Label: Add A Success Story
     app.post("/got-married", verifyJWTToken, async (req, res) => {
-      const story = req.body;
+      const storyId = (await successStoryCollection.countDocuments()) + 1;
+      const story = { ...req.body, storyId };
       const result = await successStoryCollection.insertOne(story);
       res.send(result);
     });
