@@ -276,13 +276,31 @@ async function run() {
       res.send(result);
     });
 
+    // Label: Update A Biodata
+    app.put("/update-biodata/:id", verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+
+      // *Updated Data
+      const updates = req.body;
+      delete updates.contactEmail;
+      delete updates.profileImage;
+      delete updates.biodataId;
+      delete updates.createdBy;
+      delete updates.isPremium;
+      delete updates.biodataCreatedTime;
+
+      const result = await bioDataCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updates },
+        { upsert: false }
+      );
+      res.send(result);
+    });
+
     // Label: View Own Biodata
     app.get("/self-biodata", verifyJWTToken, async (req, res) => {
       const email = req.user.email;
       const result = await bioDataCollection.findOne({ contactEmail: email });
-      // if (!result) {
-      //   return res.status(404).send({ message: "Biodata not found" });
-      // }
       res.send(result);
     });
 
@@ -395,6 +413,13 @@ async function run() {
     });
 
     // Label: Get A Success Story
+    app.get("/story/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await successStoryCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      res.send(result);
+    });
 
     // Label: Add A Success Story
     app.post("/got-married", verifyJWTToken, async (req, res) => {
