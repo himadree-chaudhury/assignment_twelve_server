@@ -64,8 +64,9 @@ async function run() {
     const database = client.db(process.env.DB_NAME);
     const bioDataCollection = database.collection("biodata");
     const userCollection = database.collection("users");
-    const contactRequestCollection = database.collection("contactRequest");
     const successStoryCollection = database.collection("stories");
+    const contactRequestCollection = database.collection("contactRequest");
+    const makePremiumRequestCollection = database.collection("premiumRequest");
 
     // *Generate JWT Token
     app.post("/jwt", async (req, res) => {
@@ -305,24 +306,26 @@ async function run() {
     });
 
     // Label: Make Biodata Premium Request
+    app.post("/premium-request", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const user = { ...req.body, requestedEmail: email };
+      const result = await makePremiumRequestCollection.insertOne(user);
+      const updateUser = await userCollection.updateOne(
+        { email },
+        { $set: { role: "Biodata Premium Requested" } }
+      );
+      res.send(result);
+    });
 
     // Label: Update Biodata To Premium
-    // app.patch(
-    //   "/biodata/:email/make-premium",
-    //   verifyJWTToken,
-    //   async (req, res) => {
-    //     const email = req.params.email;
-    //     const { isPremium } = req.body;
-    //     const result = await bioDataCollection.updateOne(
-    //       { contactEmail: email },
-    //       { $set: { isPremium } }
-    //     );
-    //     if (result.matchedCount === 0) {
-    //       return res.status(404).send({ message: "Biodata not found" });
-    //     }
-    //     res.send({ success: true });
-    //   }
-    // );
+    // app.patch("/make-premium/:email", verifyJWTToken, async (req, res) => {
+    //   const email = req.params.email;
+    //   const result = await bioDataCollection.updateOne(
+    //     { contactEmail: email },
+    //     { $set: { isPremium: true } }
+    //   );
+    //   res.send(result);
+    // });
 
     // Label: Add Favourite Biodata to User's Favourite List
     app.post("/add-favourite/:id", verifyJWTToken, async (req, res) => {
