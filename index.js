@@ -308,12 +308,18 @@ async function run() {
     // Label: Make Biodata Premium Request
     app.post("/premium-request", verifyJWTToken, async (req, res) => {
       const email = req.user.email;
-      const user = { ...req.body, requestedEmail: email };
+      const user = { ...req.body, requestedEmail: email, status: "pending" };
       const result = await makePremiumRequestCollection.insertOne(user);
       const updateUser = await userCollection.updateOne(
         { email },
         { $set: { role: "Biodata Premium Requested" } }
       );
+      res.send(result);
+    });
+
+    // Label: Get All Biodata Premium Request
+    app.get("/all-premium-request", verifyJWTToken, async (req, res) => {
+      const result = await makePremiumRequestCollection.find().toArray();
       res.send(result);
     });
 
@@ -386,7 +392,7 @@ async function run() {
     });
 
     // Label: Get All Premium Contact Requests
-    app.get("/contact-request-list", verifyJWTToken, async (req, res) => {
+    app.get("/all-contact-request", verifyJWTToken, async (req, res) => {
       const result = await contactRequestCollection.find().toArray();
       res.send(result);
     });
