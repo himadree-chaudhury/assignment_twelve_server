@@ -370,30 +370,75 @@ async function run() {
       res.send(favouriteBiodata);
     });
 
-    // Label: Add Premium Contact Request to User's Requested Contact List
+    // Label: Add Premium Contact Request
     app.post("/contact-request/:id", verifyJWTToken, async (req, res) => {
-      const id = req.params.id;
+      const id = Number(req.params.id);
       const email = req.user.email;
-      const isExist = await contactRequestCollection.findOne({
-        email,
-        biodataId: id.toString(),
-      });
-      if (isExist) {
-        return res.send(isExist);
-      }
+      const biodata = await bioDataCollection.findOne({ biodataId: id });
+      // const isExist = await contactRequestCollection.findOne({
+      //   email,
+      //   biodataId: id,
+      // });
+      // if (isExist) {
+      //   return res.send(isExist);
+      // }
       const user = await userCollection.findOne({ email });
       const result = await contactRequestCollection.insertOne({
         email: email,
         name: user.displayName,
-        biodataId: id,
+        biodataName: biodata?.name,
+        mobileNo: biodata?.mobileNumber,
+        biodataEmail: biodata?.contactEmail,
+        biodataId: Number(id),
         status: "pending",
       });
       res.send(result);
     });
 
-    // Label: Get All Premium Contact Requests
+    // Label: Get All Premium Contact Requests For Admin
     app.get("/all-contact-request", verifyJWTToken, async (req, res) => {
       const result = await contactRequestCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Label: Get All Premium Contact Requests For User
+    app.get("/contact-requests", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const result = await contactRequestCollection
+        .aggregate([
+          { $match: { email } },
+          {
+            $project: {
+              biodataEmail: {
+                $cond: [
+                  { $eq: ["$status", "confirm"] },
+                  "$biodataEmail",
+                  "$$REMOVE",
+                ],
+              },
+              mobileNo: {
+                $cond: [
+                  { $eq: ["$status", "confirm"] },
+                  "$mobileNo",
+                  "$$REMOVE",
+                ],
+              },
+              status: 1,
+              biodataId: 1,
+              biodataName: 1,
+            },
+          },
+        ])
+        .toArray();
+      res.send(result);
+    });
+
+    // Label: Delete Contact Request\
+    app.delete("/delete-contact/:id", verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+      const result = await contactRequestCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
