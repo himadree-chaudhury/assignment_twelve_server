@@ -370,18 +370,22 @@ async function run() {
       res.send(favouriteBiodata);
     });
 
+    // Label: Delete Favourite Biodata
+    app.patch("/delete-favourite/:id", verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+      const email = req.user.email;
+      const result = await userCollection.updateOne(
+        { email },
+        { $pull: { favouriteIDs: id } }
+      );
+      res.send(result);
+    });
+
     // Label: Add Premium Contact Request
     app.post("/contact-request/:id", verifyJWTToken, async (req, res) => {
       const id = Number(req.params.id);
       const email = req.user.email;
       const biodata = await bioDataCollection.findOne({ biodataId: id });
-      // const isExist = await contactRequestCollection.findOne({
-      //   email,
-      //   biodataId: id,
-      // });
-      // if (isExist) {
-      //   return res.send(isExist);
-      // }
       const user = await userCollection.findOne({ email });
       const result = await contactRequestCollection.insertOne({
         email: email,
@@ -433,7 +437,7 @@ async function run() {
       res.send(result);
     });
 
-    // Label: Delete Contact Request\
+    // Label: Delete Contact Request
     app.delete("/delete-contact/:id", verifyJWTToken, async (req, res) => {
       const id = req.params.id;
       const result = await contactRequestCollection.deleteOne({
