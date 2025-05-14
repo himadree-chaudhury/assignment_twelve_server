@@ -143,7 +143,16 @@ async function run() {
 
     // Label: Get All Users
     app.get("/all-users", verifyJWTToken, async (req, res) => {
-      const result = await userCollection.find().toArray();
+      const search = req.query.search;
+
+      // *Query For Search
+      let query = {};
+      if (search) {
+        query = {
+          displayName: { $regex: search, $options: "i" },
+        };
+      }
+      const result = await userCollection.find(query).toArray();
       res.send(result);
     });
 
