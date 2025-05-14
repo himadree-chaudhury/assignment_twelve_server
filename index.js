@@ -147,7 +147,20 @@ async function run() {
       res.send(result);
     });
 
-    // Label: Modify A User
+    // Label: Modify A User To Admin
+    app.patch("/make-admin/:email", verifyJWTToken, async (req, res) => {
+      const email = req.params.email;
+      const result = await userCollection.updateOne(
+        { email },
+        {
+          $set: {
+            isAdmin: true,
+            role: "Admin",
+          },
+        }
+      );
+      res.send(result);
+    });
 
     // Label: Get All Biodata
     app.get("/biodata", async (req, res) => {
@@ -256,13 +269,13 @@ async function run() {
 
     // Label: Get A Biodata
     app.get("/biodata/:id", verifyJWTToken, async (req, res) => {
-      const id = req.params.id;
-      const result = await bioDataCollection.findOne({ _id: new ObjectId(id) });
+      const id = Number(req.params.id);
+      const result = await bioDataCollection.findOne({ biodataId: id });
       // *Find Similar Biodatas
       const similarResult = await bioDataCollection
         .find({
           biodataType: result.biodataType,
-          _id: { $ne: new ObjectId(id) },
+          _id: { $ne: id },
         })
         .limit(3)
         .toArray();
@@ -323,15 +336,41 @@ async function run() {
       res.send(result);
     });
 
+    // Label: Get A Biodata Premium Request
+    app.get("/already-requested", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const result = await makePremiumRequestCollection.findOne({
+        requestedEmail: email,
+      });
+      res.send(result);
+    });
+
     // Label: Update Biodata To Premium
-    // app.patch("/make-premium/:email", verifyJWTToken, async (req, res) => {
-    //   const email = req.params.email;
-    //   const result = await bioDataCollection.updateOne(
-    //     { contactEmail: email },
-    //     { $set: { isPremium: true } }
-    //   );
-    //   res.send(result);
-    // });
+    app.patch("/make-premium/:email", verifyJWTToken, async (req, res) => {
+      const email = req.params.email;
+      await makePremiumRequestCollection.updateOne(
+        {
+          requestedEmail: email,
+        },
+        {
+          $set: { status: "approved" },
+        }
+      );
+      const result = await bioDataCollection.updateOne(
+        { contactEmail: email },
+        { $set: { isPremium: true } }
+      );
+      res.send(result);
+    });
+
+    // Label: Delete A Premium Biodata Request
+    app.delete("/delete-premium/:email", verifyJWTToken, async (req, res) => {
+      const email = req.params.email;
+      const result = await makePremiumRequestCollection.deleteOne({
+        requestedEmail: email,
+      });
+      res.send(result);
+    });
 
     // Label: Add Favourite Biodata to User's Favourite List
     app.post("/add-favourite/:id", verifyJWTToken, async (req, res) => {
