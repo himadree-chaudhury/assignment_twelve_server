@@ -401,7 +401,6 @@ async function run() {
               permanentDivision: 1,
               biodataId: 1,
               occupation: 1,
-              _id: 0,
             },
           }
         )
@@ -454,14 +453,14 @@ async function run() {
             $project: {
               biodataEmail: {
                 $cond: [
-                  { $eq: ["$status", "confirm"] },
+                  { $eq: ["$status", "approved"] },
                   "$biodataEmail",
                   "$$REMOVE",
                 ],
               },
               mobileNo: {
                 $cond: [
-                  { $eq: ["$status", "confirm"] },
+                  { $eq: ["$status", "approved"] },
                   "$mobileNo",
                   "$$REMOVE",
                 ],
@@ -476,7 +475,21 @@ async function run() {
       res.send(result);
     });
 
-    // Label: Delete Contact Request
+    // Label: Accept A Contact Request
+    app.patch("/approve-contact/:id", verifyJWTToken, async (req, res) => {
+      const id = req.params.id;
+      const result = await contactRequestCollection.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: { status: "approved" },
+        }
+      );
+      res.send(result);
+    });
+
+    // Label: Delete A Contact Request
     app.delete("/delete-contact/:id", verifyJWTToken, async (req, res) => {
       const id = req.params.id;
       const result = await contactRequestCollection.deleteOne({
