@@ -1,9 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -459,6 +460,7 @@ async function run() {
 
     // Label: Add Premium Contact Request
     app.post("/contact-request/:id", verifyJWTToken, async (req, res) => {
+      const { transactionId } = req.body;
       const id = Number(req.params.id);
       const email = req.user.email;
       const biodata = await bioDataCollection.findOne({ biodataId: id });
@@ -466,6 +468,7 @@ async function run() {
       const result = await contactRequestCollection.insertOne({
         email: email,
         name: user.displayName,
+        transactionID: transactionId,
         biodataName: biodata?.name,
         mobileNo: biodata?.mobileNumber,
         biodataEmail: biodata?.contactEmail,
@@ -506,6 +509,7 @@ async function run() {
               status: 1,
               biodataId: 1,
               biodataName: 1,
+              transactionID: 1,
             },
           },
         ])
@@ -577,7 +581,26 @@ async function run() {
       res.send(result);
     });
 
-    // Label: Modify A Success Story
+    // Label:Create Payment Intent
+    app.post("/create-payment-intent", verifyJWTToken, async (req, res) => {
+      const { requestedContactBiodataID } = req.body;
+      const biodata = await bioDataCollection.findOne({
+        biodataId: Number(requestedContactBiodataID),
+      });
+      if (!biodata) {
+        return res.status(400).send({ message: "Plant Not Found" });
+      }
+      const totalPrice = 5 * 100;
+      const { client_secret } = await stripe.paymentIntents.create({
+        amount: totalPrice,
+        currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+      console.log(client_secret);
+      res.send({ clientSecret: client_secret });
+    });
   } finally {
     // await client.close();
   }
