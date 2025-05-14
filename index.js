@@ -95,6 +95,19 @@ async function run() {
         .send({ success: true });
     });
 
+    // *Verify Admin Middleware
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.user?.email;
+      const query = { email };
+      const result = await userCollection.findOne(query);
+      if (!result || result?.role !== "Admin" || result.isAdmin)
+        return res
+          .status(403)
+          .send({ message: "Forbidden Access! Admin Only Actions!" });
+
+      next();
+    };
+
     // Label: Get Milestone Stat
     app.get("/milestone", async (req, res) => {
       const totalBiodata = await bioDataCollection.countDocuments();
@@ -143,6 +156,13 @@ async function run() {
       res.send({ ...result, requestedContactIDs });
     });
 
+    // Label: Get User Role
+    app.get("user-info/role", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const result = await userCollection.findOne({ email });
+      res.send(result.role);
+    });
+
     // Label: Update A User
     app.patch("/update-user", verifyJWTToken, async (req, res) => {
       const email = req.user.email;
@@ -159,7 +179,7 @@ async function run() {
         const result = await userCollection.updateOne(
           { email },
           {
-            $set: { displayURL: updateField.displayURL },
+            $set: { photoURL: updateField.photoURL },
           }
         );
       }
