@@ -356,10 +356,6 @@ async function run() {
       const email = req.user.email;
       const user = { ...req.body, requestedEmail: email, status: "pending" };
       const result = await makePremiumRequestCollection.insertOne(user);
-      const updateUser = await userCollection.updateOne(
-        { email },
-        { $set: { role: "Biodata Premium Requested" } }
-      );
       res.send(result);
     });
 
