@@ -119,6 +119,7 @@ async function run() {
         ...req.body,
         role: "User",
         isAdmin: false,
+        isPremiumMember: false,
         favouriteIDs: [],
         timestamp: Date.now(),
       });
@@ -139,6 +140,28 @@ async function run() {
         .toArray();
       const requestedContactIDs = requests.map((req) => req.biodataId);
       res.send({ ...result, requestedContactIDs });
+    });
+
+    // Label: Update A User
+    app.patch("/update-user", verifyJWTToken, async (req, res) => {
+      const email = req.user.email;
+      const updateField = req.body;
+      if (updateField.displayName) {
+        const result = await userCollection.updateOne(
+          { email },
+          {
+            $set: { displayName: updateField.displayName },
+          }
+        );
+      }
+      if (updateField.photoURL) {
+        const result = await userCollection.updateOne(
+          { email },
+          {
+            $set: { displayURL: updateField.displayURL },
+          }
+        );
+      }
     });
 
     // Label: Get All Users
@@ -363,6 +386,12 @@ async function run() {
         },
         {
           $set: { status: "approved" },
+        }
+      );
+      await userCollection.updateOne(
+        { email },
+        {
+          $set: { isPremiumMember: true },
         }
       );
       const result = await bioDataCollection.updateOne(
