@@ -148,6 +148,7 @@ async function run() {
     // Label: Add A User
     app.post("/user/:email", async (req, res) => {
       const email = req.params.email;
+      console.log(email);
       const isExist = await userCollection.findOne({ email });
 
       if (isExist) {
