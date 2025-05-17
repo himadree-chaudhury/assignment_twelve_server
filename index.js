@@ -108,6 +108,31 @@ async function run() {
       next();
     };
 
+    // Label: Admin Stat
+    app.get("/admin-stat", verifyJWTToken, async (req, res) => {
+      const biodataCount = await bioDataCollection.countDocuments();
+      const maleBiodataCount = await bioDataCollection.countDocuments({
+        biodataType: "Male",
+      });
+      const femaleBiodataCount = await bioDataCollection.countDocuments({
+        biodataType: "Female",
+      });
+      const premiumBiodataCount = await bioDataCollection.countDocuments({
+        isPremium: true,
+      });
+      totalRevenue = (await contactRequestCollection.countDocuments()) * 5;
+      totalUser = await userCollection.countDocuments();
+
+      res.send({
+        biodataCount,
+        maleBiodataCount,
+        femaleBiodataCount,
+        premiumBiodataCount,
+        totalRevenue,
+        totalUser,
+      });
+    });
+
     // Label: Get Milestone Stat
     app.get("/milestone", async (req, res) => {
       const totalBiodata = await bioDataCollection.countDocuments();
