@@ -98,9 +98,8 @@ async function run() {
     // *Verify Admin Middleware
     const verifyAdmin = async (req, res, next) => {
       const email = req.user?.email;
-      const query = { email };
-      const result = await userCollection.findOne(query);
-      if (!result || result?.role !== "Admin" || result.isAdmin)
+      const result = await userCollection.findOne({ email });
+      if (!result || result.role !== "Admin" || !result.isAdmin)
         return res
           .status(403)
           .send({ message: "Forbidden Access! Admin Only Actions!" });
@@ -109,7 +108,7 @@ async function run() {
     };
 
     // Label: Admin Stat
-    app.get("/admin-stat", verifyJWTToken, async (req, res) => {
+    app.get("/admin-stat", verifyJWTToken, verifyAdmin, async (req, res) => {
       const biodataCount = await bioDataCollection.countDocuments();
       const maleBiodataCount = await bioDataCollection.countDocuments({
         biodataType: "Male",
@@ -182,10 +181,13 @@ async function run() {
     });
 
     // Label: Get User Role
-    app.get("user-info/role", verifyJWTToken, async (req, res) => {
+    app.get("/user-role", verifyJWTToken, async (req, res) => {
       const email = req.user.email;
       const result = await userCollection.findOne({ email });
-      res.send(result.role);
+      res.send({
+        role: result?.role,
+        isAdmin: result?.isAdmin,
+      });
     });
 
     // Label: Update A User
@@ -211,7 +213,7 @@ async function run() {
     });
 
     // Label: Get All Users
-    app.get("/all-users", verifyJWTToken, async (req, res) => {
+    app.get("/all-users", verifyJWTToken, verifyAdmin, async (req, res) => {
       const search = req.query.search;
 
       // *Query For Search
@@ -226,19 +228,24 @@ async function run() {
     });
 
     // Label: Modify A User To Admin
-    app.patch("/make-admin/:email", verifyJWTToken, async (req, res) => {
-      const email = req.params.email;
-      const result = await userCollection.updateOne(
-        { email },
-        {
-          $set: {
-            isAdmin: true,
-            role: "Admin",
-          },
-        }
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/make-admin/:email",
+      verifyJWTToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const result = await userCollection.updateOne(
+          { email },
+          {
+            $set: {
+              isAdmin: true,
+              role: "Admin",
+            },
+          }
+        );
+        res.send(result);
+      }
+    );
 
     // Label: Get All Biodata
     app.get("/biodata", async (req, res) => {
@@ -405,10 +412,15 @@ async function run() {
     });
 
     // Label: Get All Biodata Premium Request
-    app.get("/all-premium-request", verifyJWTToken, async (req, res) => {
-      const result = await makePremiumRequestCollection.find().toArray();
-      res.send(result);
-    });
+    app.get(
+      "/all-premium-request",
+      verifyJWTToken,
+      verifyAdmin,
+      async (req, res) => {
+        const result = await makePremiumRequestCollection.find().toArray();
+        res.send(result);
+      }
+    );
 
     // Label: Get A Biodata Premium Request
     app.get("/already-requested", verifyJWTToken, async (req, res) => {
@@ -420,28 +432,33 @@ async function run() {
     });
 
     // Label: Update Biodata To Premium
-    app.patch("/make-premium/:email", verifyJWTToken, async (req, res) => {
-      const email = req.params.email;
-      await makePremiumRequestCollection.updateOne(
-        {
-          requestedEmail: email,
-        },
-        {
-          $set: { status: "approved" },
-        }
-      );
-      await userCollection.updateOne(
-        { email },
-        {
-          $set: { isPremiumMember: true },
-        }
-      );
-      const result = await bioDataCollection.updateOne(
-        { contactEmail: email },
-        { $set: { isPremium: true } }
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/make-premium/:email",
+      verifyJWTToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        await makePremiumRequestCollection.updateOne(
+          {
+            requestedEmail: email,
+          },
+          {
+            $set: { status: "approved" },
+          }
+        );
+        await userCollection.updateOne(
+          { email },
+          {
+            $set: { isPremiumMember: true },
+          }
+        );
+        const result = await bioDataCollection.updateOne(
+          { contactEmail: email },
+          { $set: { isPremium: true } }
+        );
+        res.send(result);
+      }
+    );
 
     // Label: Delete A Premium Biodata Request
     app.delete("/delete-premium/:email", verifyJWTToken, async (req, res) => {
@@ -520,10 +537,15 @@ async function run() {
     });
 
     // Label: Get All Premium Contact Requests For Admin
-    app.get("/all-contact-request", verifyJWTToken, async (req, res) => {
-      const result = await contactRequestCollection.find().toArray();
-      res.send(result);
-    });
+    app.get(
+      "/all-contact-request",
+      verifyJWTToken,
+      verifyAdmin,
+      async (req, res) => {
+        const result = await contactRequestCollection.find().toArray();
+        res.send(result);
+      }
+    );
 
     // Label: Get All Premium Contact Requests For User
     app.get("/contact-requests", verifyJWTToken, async (req, res) => {
@@ -559,18 +581,23 @@ async function run() {
     });
 
     // Label: Accept A Contact Request
-    app.patch("/approve-contact/:id", verifyJWTToken, async (req, res) => {
-      const id = req.params.id;
-      const result = await contactRequestCollection.updateOne(
-        {
-          _id: new ObjectId(id),
-        },
-        {
-          $set: { status: "approved" },
-        }
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/approve-contact/:id",
+      verifyJWTToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const result = await contactRequestCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: { status: "approved" },
+          }
+        );
+        res.send(result);
+      }
+    );
 
     // Label: Delete A Contact Request
     app.delete("/delete-contact/:id", verifyJWTToken, async (req, res) => {
