@@ -1,7 +1,7 @@
 # Matrimony Platform - Server Side
 
 **Website Name**: Pathway  
-**Admin Email**: admin@gmail.com  
+**Admin Email**: john@email.com  
 **Admin Password**: 123456Aa  
 **Live Site URL**: [Visit Pathway](https://pathway-himadree.web.app/)  
 **Client Repository**: [Visit Client Side Repo](https://github.com/himadree-chaudhury/assignment_twelve_client)

@@ -56,10 +56,10 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
 
     // Label: Database And Collections
     const database = client.db(process.env.DB_NAME);
@@ -119,8 +119,9 @@ async function run() {
       const premiumBiodataCount = await bioDataCollection.countDocuments({
         isPremium: true,
       });
-      totalRevenue = (await contactRequestCollection.countDocuments()) * 5;
-      totalUser = await userCollection.countDocuments();
+      const totalRevenue =
+        (await contactRequestCollection.countDocuments()) * 5;
+      const totalUser = await userCollection.countDocuments();
 
       res.send({
         biodataCount,
@@ -439,6 +440,12 @@ async function run() {
       verifyAdmin,
       async (req, res) => {
         const email = req.params.email;
+
+        const isBiodata = await bioDataCollection.findOne({ email });
+        if (!isBiodata) {
+          return res.send(isBiodata);
+        }
+
         await makePremiumRequestCollection.updateOne(
           {
             requestedEmail: email,
